@@ -1,0 +1,15 @@
+# copy this to terraform.tfvars and update variabbles
+# CIDR block for the VPC
+vpc_cidr_block    = "10.0.0.0/16"
+
+# CIDR block for the subnet
+subnet_cidr_block = "10.0.10.0/24"
+
+# AWS availability zone for the subnet
+availability_zone = "us-east-2a"
+
+# Environment prefix for resource naming (e.g., dev, staging, prod)
+env_prefix        = "dev"
+
+# Your IP address in CIDR notation for SSH access (use 0.0.0.0/0 for any IP or specify your IP for security)
+my_ip             = "0.0.0.0/0"
