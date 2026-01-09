@@ -7,6 +7,12 @@ variable "subnet_cidr_block" {}
 variable "availability_zone" {}
 variable "env_prefix" {}
 variable "my_ip" {}
+variable "instance_type" {
+  default = "t2.micro"
+}
+variable "public_key_path" {
+  
+}
 
 resource "aws_vpc" "my-vpc" {
   cidr_block = var.vpc_cidr_block
@@ -83,9 +89,56 @@ resource "aws_default_security_group" "myapp-default-sg" {
     cidr_blocks = ["0.0.0.0/0"]
     prefix_list_ids = []
   }
-
-
   tags = {
     Name : "${var.env_prefix}-default-sg"
   }
+}
+
+
+data "aws_ami" "latest-amazon-linux-ami" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    # values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    values = ["al2023-ami-2023.*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"] 
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+  owners = ["137112412989"] # Amazon  
+}
+
+# output "ami" {
+#   value = data.aws_ami.latest-amazon-linux-ami
+# }
+
+resource "aws_key_pair" "deployer-key" {
+  key_name   = "test-2"
+  public_key = file(var.public_key_path)
+}
+
+resource "aws_instance" "myapp-ec2-instance" {
+  ami           = data.aws_ami.latest-amazon-linux-ami.id # Amazon Linux 2 AMI (HVM), SSD Volume Type
+  instance_type = var.instance_type
+  subnet_id     = aws_subnet.myapp-subnet-1.id
+  security_groups = [aws_default_security_group.myapp-default-sg.id]
+  availability_zone = var.availability_zone
+  associate_public_ip_address = true
+  key_name = aws_key_pair.deployer-key.key_name
+
+  user_data = file("entry-script.sh")
+  tags = {
+    Name : "${var.env_prefix}-ec2-instance"
+  }
+}
+
+output "ec2-instance-public-ip" {
+  value = aws_instance.myapp-ec2-instance.public_ip
+  
 }
